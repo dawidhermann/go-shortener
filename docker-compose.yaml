@@ -1,0 +1,15 @@
+version: "3.9"
+services:
+  redis:
+    image: "redis:7.0.4-alpine"
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+  shortener:
+    image: "shortener"
+    environment:
+      - REDIS_ADDR=redis://redis:6379
+    ports:
+      - "8090:8090"
+    depends_on:
+      - redis
