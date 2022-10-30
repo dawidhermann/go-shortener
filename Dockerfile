@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM golang:1.18.3@sha256:5417b4917fa7ed3ad2678a3ce6378a00c95bfd430c2ffa39936fce55130b5f2c AS builder
+FROM golang:1.19.2@sha256:2fddf0539591f8e364c9adb3d495d1ba2ca8a8df420ad23b58e7bcee7986ea6c AS builder
 ENV CGO_ENABLED=0
 WORKDIR /shortener-bin
 COPY go.mod ./
@@ -8,7 +8,7 @@ RUN go mod download
 COPY . ./
 RUN go build -o shortener ./cmd/shortener/
 
-FROM alpine:3.16.0@sha256:4ff3ca91275773af45cb4b0834e12b7eb47d1c18f770a0b151381cd227f4c253
+FROM alpine:3.16.2@sha256:1304f174557314a7ed9eddb4eab12fed12cb0cd9809e4c28f29af86979a3c870
 RUN apk --no-cache add ca-certificates
 WORKDIR /app
 COPY --from=builder ./shortener-bin/shortener .
