@@ -1,7 +1,6 @@
 package shortener
 
 import (
-	"fmt"
 	"math/rand"
 	"strings"
 	"time"
@@ -24,7 +23,6 @@ func randomString() string {
 }
 
 func base62Encode(number uint64) string {
-	fmt.Println(number)
 	length := len(characterSet)
 	var encodedBuilder strings.Builder
 	encodedBuilder.Grow(10)
