@@ -1,16 +1,40 @@
 version: "3.9"
 services:
   redis:
-    image: "redis:7.0.4-alpine"
+    image: "redis:7.0.5-alpine3.16@sha256:70633599cb269b224b4b6bfba1e550700b5683dd24f9bd076d75793e05b2b518"
+    restart: always
     command: redis-server /usr/local/etc/redis/redis.conf
     volumes:
       - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+      - redis_data:/data
+  postgres:
+    image: "postgres:15.1-alpine3.16@sha256:44b4073d487d0f9baf82bc95d10e2b1f161b18dcc52cfbd0eb2a894b5e2cd513"
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
   shortener:
-    image: "shortener"
+    image: "shortener-api"
+    restart: always
     environment:
       - REDIS_ADDR=${REDIS_ADDR}
       - REDIS_PASS=${REDIS_PASS}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
     ports:
       - "8090:8090"
     depends_on:
       - redis
+      - postgres
+
+volumes:
+  redis_data:
+    driver: local
+  postgres_data:
+    driver: local

@@ -16,6 +16,15 @@ func StartServer() {
 			r.Delete("/", deleteShortenUrlHandler)
 		})
 	})
+	r.Route("/user", func(r chi.Router) {
+		r.Post("/", createUser)
+		r.Route("/{userId}", func(r chi.Router) {
+			r.Delete("/", deleteUser)
+			r.Get("/", getUser)
+			r.Patch("/", updateUser)
+		})
+
+	})
 	r.Get("/{urlId}", urlRedirectionHandler)
 
 	err := http.ListenAndServe(":8090", r)

@@ -10,7 +10,7 @@ const (
 	characterSet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 )
 
-func ShortenUrl() string {
+func shortenUrl() string {
 	return randomString()
 }
 

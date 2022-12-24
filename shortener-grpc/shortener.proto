@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option go_package = "github.com/dawidhermann/shortener-api/shortener-grpc";
+
+package shortener;
+
+service ShortenerClient {
+  rpc ShortenUrl(ShortenRequest) returns (ShortenResponse) {};
+}
+
+message ShortenRequest {
+  string url = 1;
+}
+
+message ShortenResponse {
+  string id = 1;
+}
