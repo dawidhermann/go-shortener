@@ -4,13 +4,25 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/dawidhermann/shortener-api/internal/db"
 	"github.com/dawidhermann/shortener-api/internal/users"
 	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
+	"strconv"
 )
 
-func createUser(w http.ResponseWriter, r *http.Request) {
+type UsersController struct {
+	service users.ServiceUsers
+}
+
+func newUsersController(connDb db.SqlConnection) UsersController {
+	return UsersController{
+		service: users.NewServiceUsers(connDb),
+	}
+}
+
+func (controller UsersController) createUser(w http.ResponseWriter, r *http.Request) {
 	var userCreateModel users.UserCreateViewModel
 	err := json.NewDecoder(r.Body).Decode(&userCreateModel)
 	if err != nil {
@@ -23,17 +35,28 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		JSONResponse(w, errorResult, status)
 		return
 	}
-	userId, err := users.CreateUser(userCreateModel)
+	userId, err := controller.service.CreateUser(userCreateModel)
 	userLocation := fmt.Sprintf("/users/%d", userId)
 	w.Header().Set("Location", userLocation)
 	w.Header().Set("Content-Location", userLocation)
 	w.WriteHeader(http.StatusCreated)
 }
 
-func updateUser(w http.ResponseWriter, r *http.Request) {
-	userId := chi.URLParam(r, "userId")
+func (controller UsersController) updateUser(w http.ResponseWriter, r *http.Request) {
+	userIdParam := chi.URLParam(r, "userId")
+	userId, err := strconv.Atoi(userIdParam)
+	if err != nil {
+		log.Println(err.Error())
+		status := http.StatusBadRequest
+		errorResult := operationErrorResult{
+			Error: operationErrorDetails{Code: status,
+				Message: "Incorrect user id"},
+		}
+		JSONResponse(w, errorResult, status)
+		return
+	}
 	var userPatchModel users.UserPatchModel
-	err := json.NewDecoder(r.Body).Decode(&userPatchModel)
+	err = json.NewDecoder(r.Body).Decode(&userPatchModel)
 	if err != nil {
 		log.Println(err.Error())
 		status := http.StatusBadRequest
@@ -44,7 +67,7 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 		JSONResponse(w, errorResult, status)
 		return
 	}
-	err = users.UpdateUser(userId, userPatchModel)
+	err = controller.service.UpdateUser(userId, userPatchModel)
 	if err != nil {
 		log.Println(err.Error())
 		status := http.StatusBadRequest
@@ -61,9 +84,19 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func getUser(w http.ResponseWriter, r *http.Request) {
-	userId := chi.URLParam(r, "userId")
-	userData, err := users.GetUser(userId)
+func (controller UsersController) getUser(w http.ResponseWriter, r *http.Request) {
+	userIdParam := chi.URLParam(r, "userId")
+	userId, err := strconv.Atoi(userIdParam)
+	if err != nil {
+		status := http.StatusBadRequest
+		errorResult := operationErrorResult{
+			Error: operationErrorDetails{Code: status,
+				Message: "Incorrect user id"},
+		}
+		JSONResponse(w, errorResult, status)
+		return
+	}
+	userData, err := controller.service.GetUser(userId)
 	if errors.Is(err, users.ErrUserNotFound) {
 		status := http.StatusNotFound
 		errorResult := operationErrorResult{
@@ -88,10 +121,19 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 	JSONResponse(w, createdResponse, okStatus)
 }
 
-func deleteUser(w http.ResponseWriter, r *http.Request) {
-	userId := chi.URLParam(r, "userId")
-	err := users.DeleteUser(userId)
-	log.Println(err)
+func (controller UsersController) deleteUser(w http.ResponseWriter, r *http.Request) {
+	userIdParam := chi.URLParam(r, "userId")
+	userId, err := strconv.Atoi(userIdParam)
+	if err != nil {
+		status := http.StatusBadRequest
+		errorResult := operationErrorResult{
+			Error: operationErrorDetails{Code: status,
+				Message: "Incorrect user id"},
+		}
+		JSONResponse(w, errorResult, status)
+		return
+	}
+	err = controller.service.DeleteUser(userId)
 	if errors.Is(err, users.ErrIncorrectUserId) {
 		status := http.StatusBadRequest
 		errorResult := operationErrorResult{

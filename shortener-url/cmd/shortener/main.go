@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	pb "github.com/dawidhermann/shortener-url/internal/protobuf"
 	"github.com/dawidhermann/shortener-url/internal/shortener"
 	"google.golang.org/grpc"
 	"log"
@@ -9,16 +10,8 @@ import (
 	"os"
 )
 
-import pb "github.com/dawidhermann/shortener-url/internal/protobuf"
-
 func main() {
-	//url := shortener.ShortenUrl()
-	//fmt.Println(url)
-	//api.StartServer()
-	//dbInstance := db.NewConnection("shortener_user", "P0sTgr3sP4SS", "postgres:5432", "shortener_db")
-	//db.CreateUser("dhermann", "secretpass", "email@example.com", dbInstance)
-	port := os.Getenv("SERVICE_PORT")
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", os.Getenv("GRPC_SERVER_PORT")))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}

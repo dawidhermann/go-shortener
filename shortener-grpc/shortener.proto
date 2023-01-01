@@ -1,17 +1,26 @@
 syntax = "proto3";
 
-option go_package = "github.com/dawidhermann/shortener-api/shortener-grpc";
+option go_package = "github.com/dawidhermann/shortener-api/shortener-rpc";
 
 package shortener;
 
 service ShortenerClient {
-  rpc ShortenUrl(ShortenRequest) returns (ShortenResponse) {};
+  rpc CreateShortenedUrl(CreateShortenedUrlRequest) returns (CreateShortenedUrlResponse) {};
+  rpc DeleteShortenedUrl(DeleteShortenedUrlRequest) returns (DeleteShortenedUrlResponse) {};
 }
 
-message ShortenRequest {
+message CreateShortenedUrlRequest {
   string url = 1;
 }
 
-message ShortenResponse {
+message CreateShortenedUrlResponse {
   string id = 1;
+}
+
+message DeleteShortenedUrlRequest {
+  string key = 1;
+}
+
+message DeleteShortenedUrlResponse {
+  string key = 1;
 }

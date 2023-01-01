@@ -2,6 +2,7 @@ package users
 
 import (
 	"errors"
+	"github.com/dawidhermann/shortener-api/internal/db"
 	"github.com/dawidhermann/shortener-api/internal/validators"
 )
 
@@ -14,10 +15,17 @@ var (
 	ErrUserNotFound     = errors.New("user not found")
 )
 
-type usersService struct {
+type ServiceUsers struct {
+	repository RepositoryUsers
 }
 
-func CreateUser(createUserModel UserCreateViewModel) (int, error) {
+func NewServiceUsers(connDb db.SqlConnection) ServiceUsers {
+	return ServiceUsers{
+		repository: newRepositoryUsers(connDb),
+	}
+}
+
+func (service ServiceUsers) CreateUser(createUserModel UserCreateViewModel) (int, error) {
 	if !validators.ValidateUserPassword(createUserModel.Password) {
 		return 0, ErrInvalidPassword
 	}
@@ -30,27 +38,35 @@ func CreateUser(createUserModel UserCreateViewModel) (int, error) {
 	if !validators.ValidateEmail(createUserModel.Email) {
 		return 0, ErrInvalidEmail
 	}
-	userId, err := createUserEntity(createUserModel.Username, createUserModel.Password, createUserModel.Email)
+	userId, err := service.repository.createUserEntity(createUserModel.Username, createUserModel.Password, createUserModel.Email)
 	return userId, err
 }
 
-func GetUser(userId string) (user, error) {
-	userData, err := getUserEntity(userId)
+func (service ServiceUsers) GetUser(userId int) (user, error) {
+	userData, err := service.repository.getUserEntity(userId)
 	if err != nil {
 		return user{}, ErrUserNotFound
 	}
 	return userData, nil
 }
 
-func DeleteUser(userId string) error {
-	if len(userId) == 0 {
-		return ErrIncorrectUserId
+func (service ServiceUsers) GetUserByUsername(username string) (user, error) {
+	userData, err := service.repository.getUserEntityByUsername(username)
+	if err != nil {
+		return user{}, ErrUserNotFound
 	}
-	return deleteUserEntity(userId)
+	return userData, nil
 }
 
-func UpdateUser(userId string, userPatchModel UserPatchModel) error {
-	userData, err := GetUser(userId)
+func (service ServiceUsers) DeleteUser(userId int) error {
+	if userId == 0 {
+		return ErrIncorrectUserId
+	}
+	return service.repository.deleteUserEntity(userId)
+}
+
+func (service ServiceUsers) UpdateUser(userId int, userPatchModel UserPatchModel) error {
+	userData, err := service.GetUser(userId)
 	if err != nil {
 		return err
 	}
@@ -78,6 +94,6 @@ func UpdateUser(userId string, userPatchModel UserPatchModel) error {
 	} else if userPatchModel.PasswordConfirm != nil {
 		return ErrPasswordMismatch
 	}
-	err = updateUserEntity(userData)
+	err = service.repository.updateUserEntity(userData)
 	return err
 }
