@@ -70,9 +70,15 @@ func (controller UrlController) createShortenUrlHandler(w http.ResponseWriter, r
 		return
 	}
 	urlLocation := fmt.Sprintf("/urls/%d", urlId)
+	okStatus := http.StatusCreated
 	w.Header().Set("Location", urlLocation)
 	w.Header().Set("Content-Location", urlLocation)
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(okStatus)
+	okResp := operationOkResult{Result: operationOkDetails{
+		Status: okStatus,
+		Data:   nil,
+	}}
+	JSONResponse(w, okResp, okStatus)
 }
 
 func (controller UrlController) getUrlHandler(w http.ResponseWriter, r *http.Request) {

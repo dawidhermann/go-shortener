@@ -37,9 +37,15 @@ func (controller UsersController) createUser(w http.ResponseWriter, r *http.Requ
 	}
 	userId, err := controller.service.CreateUser(userCreateModel)
 	userLocation := fmt.Sprintf("/users/%d", userId)
+	okStatus := http.StatusCreated
 	w.Header().Set("Location", userLocation)
 	w.Header().Set("Content-Location", userLocation)
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(okStatus)
+	okResp := operationOkResult{Result: operationOkDetails{
+		Status: okStatus,
+		Data:   nil,
+	}}
+	JSONResponse(w, okResp, okStatus)
 }
 
 func (controller UsersController) updateUser(w http.ResponseWriter, r *http.Request) {
@@ -79,9 +85,15 @@ func (controller UsersController) updateUser(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	userLocation := fmt.Sprintf("/users/%s", userId)
+	okStatus := http.StatusOK
 	w.Header().Set("Location", userLocation)
 	w.Header().Set("Content-Location", userLocation)
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(okStatus)
+	okResp := operationOkResult{Result: operationOkDetails{
+		Status: okStatus,
+		Data:   nil,
+	}}
+	JSONResponse(w, okResp, okStatus)
 }
 
 func (controller UsersController) getUser(w http.ResponseWriter, r *http.Request) {
@@ -152,5 +164,6 @@ func (controller UsersController) deleteUser(w http.ResponseWriter, r *http.Requ
 		JSONResponse(w, errorResult, status)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+	okStatus := http.StatusNoContent
+	w.WriteHeader(okStatus)
 }
