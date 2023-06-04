@@ -3,12 +3,11 @@ package rpc
 import (
 	"context"
 	"fmt"
-	"log"
-
 	"github.com/dawidhermann/shortener-api/config"
 	pb "github.com/dawidhermann/shortener-api/internal/protobuf"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"log"
 )
 
 type ConnRpc struct {

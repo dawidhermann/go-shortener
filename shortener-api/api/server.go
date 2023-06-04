@@ -1,58 +1,84 @@
 package api
 
 import (
-	"fmt"
-	"github.com/dawidhermann/shortener-api/config"
-	"github.com/dawidhermann/shortener-api/internal/auth"
-	"github.com/dawidhermann/shortener-api/internal/db"
-	"github.com/dawidhermann/shortener-api/internal/rpc"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/jwtauth"
-	"log"
 	"net/http"
+
+	"github.com/dawidhermann/shortener-api/api/controllers/v1/userctrl"
+	v1 "github.com/dawidhermann/shortener-api/business/web/v1"
+	"github.com/dawidhermann/shortener-api/internal/core/user"
+	"github.com/jmoiron/sqlx"
+	"github.com/labstack/echo/v4"
 )
 
-func StartServer(serverConfig config.ServerConfig, connRpc rpc.ConnRpc, connDb db.SqlConnection, authManager auth.AuthenticationManager) {
-	urlController := NewUrlController(connRpc, connDb)
-	usersController := newUsersController(connDb)
-	authController := NewAuthController(connDb, authManager)
-	r := chi.NewRouter()
-	r.Use(middleware.Logger)
-	r.Post("/auth", authController.authHandler)
-	r.Route("/url", func(r chi.Router) {
-		r.Use(jwtauth.Verifier(authManager.TokenAuth))
-		r.Group(func(r chi.Router) {
-			r.Post("/", urlController.createShortenUrlHandler)
-		})
-		r.Group(func(r chi.Router) {
-			r.Use(jwtauth.Authenticator)
-			r.Route("/{urlId}", func(r chi.Router) {
-				r.Delete("/", urlController.deleteShortenUrlHandler)
-				r.Get("/", urlController.getUrlHandler)
-			})
-		})
-	})
-	r.Route("/user", func(r chi.Router) {
-		r.Group(func(r chi.Router) {
-			r.Post("/", usersController.createUser)
-		})
-		r.Group(func(r chi.Router) {
-			r.Use(jwtauth.Verifier(authManager.TokenAuth))
-			r.Use(jwtauth.Authenticator)
-			r.Route("/{userId}", func(r chi.Router) {
-				r.Delete("/", usersController.deleteUser)
-				r.Get("/", usersController.getUser)
-				r.Patch("/", usersController.updateUser)
-			})
-		})
-	})
-	//r.Get("/{urlId}", urlRedirectionHandler)
-	httpPort := fmt.Sprintf(":%s", serverConfig.ServerPort)
-	err := http.ListenAndServe(httpPort, r)
-	if err != nil {
-		log.Fatalf("Cannot start app on port %s because of %s", httpPort, err)
-		return
+// type Handler func(c echo.Context) error
+
+type App struct {
+	*echo.Echo
+}
+
+func NewApp() *App {
+	return &App{echo.New()}
+}
+
+// func (app App) Handle(method string, path string, handler Handler) {
+// 	h := func(c echo.Context) {
+
+// 	}
+// 	app.Router().Add(method, path, h)
+// }
+
+func APIMux(db *sqlx.DB) *App {
+	app := NewApp()
+	//r.Post("/auth", authController.authHandler)
+	// group := app.Group("/url")
+	// group.POST("/", urlController.createShortenUrlHandler)
+	// app.Route("/url", func(r chi.Router) {
+	// 	//r.Use(jwtauth.Verifier(authManager.TokenAuth))
+	// 	app.Group(func(r chi.Router) {
+	// 		app.Post("/", urlController.createShortenUrlHandler)
+	// 	})
+	// 	app.Group(func(r chi.Router) {
+	// 		//r.Use(jwtauth.Authenticator)
+	// 		app.Route("/{urlId}", func(r chi.Router) {
+	// 			app.Delete("/", urlController.deleteShortenUrlHandler)
+	// 			app.Get("/", urlController.getUrlHandler)
+	// 		})
+	// 	})
+	// })
+	usrctrl := userctrl.UsersController{
+		Core: user.NewUserCore(db),
 	}
-	log.Printf("Listening on port: %s", httpPort)
+	group := app.Group("/user")
+	group.POST("/", usrctrl.CreateUser)
+	group.GET("/:id", usrctrl.GetUserById)
+	group.PATCH("/:id", usrctrl.UpdateUser)
+	group.DELETE("/:id", usrctrl.DeleteUser)
+	app.HTTPErrorHandler = errorHandler
+	//r.Route("/user", func(r chi.Router) {
+	//	r.Group(func(r chi.Router) {
+	//		r.Post("/", usersController.createUser)
+	//	})
+	//	r.Group(func(r chi.Router) {
+	//		r.Use(jwtauth.Verifier(authManager.TokenAuth))
+	//		r.Use(jwtauth.Authenticator)
+	//		r.Route("/{userId}", func(r chi.Router) {
+	//			r.Delete("/", usersController.deleteUser)
+	//			r.Get("/", usersController.getUser)
+	//			r.Patch("/", usersController.updateUser)
+	//		})
+	//	})
+	//})
+	return app
+}
+
+func errorHandler(err error, c echo.Context) {
+	switch {
+	case v1.IsRequestError(err):
+		reqErr := v1.GetRequestError(err)
+		c.JSON(reqErr.Status, v1.ErrorResponse{Error: reqErr.Error()})
+	default:
+		status := http.StatusInternalServerError
+		c.JSON(status, v1.ErrorResponse{Error: http.StatusText(status)})
+	}
+	c.Echo().DefaultHTTPErrorHandler(err, c)
 }
