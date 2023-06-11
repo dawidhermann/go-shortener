@@ -15,10 +15,10 @@ type UserViewModel struct {
 }
 
 type UserCreateViewModel struct {
-	Username        string       `json:"username" validate:"required"`
-	Email           mail.Address `json:"email" validate:"required,email"`
-	Password        string       `json:"password" validate:"required"`
-	PasswordConfirm string       `json:"passwordConfirm" validate:"eqfield=Password"`
+	Username        string `json:"username" validate:"required"`
+	Email           string `json:"email" validate:"required,email"`
+	Password        string `json:"password" validate:"required"`
+	PasswordConfirm string `json:"passwordConfirm" validate:"eqfield=Password"`
 }
 
 type UserPatchModel struct {

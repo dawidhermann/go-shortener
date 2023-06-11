@@ -1,35 +1,67 @@
 package database
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"net/url"
 
+	"github.com/dawidhermann/shortener-api/appbase/config"
 	"github.com/jmoiron/sqlx"
 )
 
-type DbConfig struct {
-	User     string
-	Password string
-	Host     string
-	Name     string
-	Schema   string
-}
+var (
+	ErrDbNotFound       = errors.New("db record not found")
+	ErrDoNoRowsAffected = errors.New("no rows affected")
+)
 
-func Connect(cfg DbConfig) (*sqlx.DB, error) {
+func Connect(cfg config.DbConfig) (*sqlx.DB, error) {
 	q := make(url.Values)
+	q.Set("sslmode", "disable")
 	connectionUrl := url.URL{
 		Scheme:   "postgres",
 		User:     url.UserPassword(cfg.User, cfg.Password),
-		Host:     cfg.Host,
-		Path:     cfg.Name,
+		Host:     fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
+		Path:     cfg.DbName,
 		RawQuery: q.Encode(),
 	}
+	fmt.Println(connectionUrl.String())
 	dbPtr, err := sqlx.Open("postgres", connectionUrl.String())
 	if err != nil {
+		return nil, err
+	}
+	if err = dbPtr.Ping(); err != nil {
 		return nil, err
 	}
 	return dbPtr, nil
 }
 
-//func (sqlConn SqlConnection) Close() {
-//	sqlConn.Close()
-//}
+func NamedQueryStruct(ctx context.Context, db sqlx.ExtContext, query string, queryData any, queryDest any) error {
+	rows, err := sqlx.NamedQueryContext(ctx, db, query, queryData)
+	defer rows.Close()
+	if err != nil {
+		return err
+	}
+	if !rows.Next() {
+		return ErrDbNotFound
+	}
+	if err = rows.StructScan(queryDest); err != nil {
+		return err
+	}
+	return nil
+}
+
+func NamedExecContext(ctx context.Context, db sqlx.ExtContext, query string, queryData any) error {
+	result, err := sqlx.NamedExecContext(ctx, db, query, queryData)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrDoNoRowsAffected
+	}
+	return nil
+}

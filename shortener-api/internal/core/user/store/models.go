@@ -12,6 +12,6 @@ type DbUser struct {
 	Password    []byte    `db:"password"`
 	Email       string    `db:"email"`
 	Enabled     bool      `db:"enabled"`
-	DateCreated time.Time `db:"date_created"`
-	DateUpdated time.Time `db:"date_updated"`
+	DateCreated time.Time `db:"created_at"`
+	DateUpdated time.Time `db:"updated_at"`
 }

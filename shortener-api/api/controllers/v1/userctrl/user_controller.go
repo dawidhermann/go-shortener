@@ -23,7 +23,7 @@ type UsersController struct {
 
 func (ctrl UsersController) CreateUser(c echo.Context) error {
 	var userCreateModel user.UserCreateViewModel
-	if err := c.Bind(userCreateModel); err != nil {
+	if err := c.Bind(&userCreateModel); err != nil {
 		return v1.NewRequestError(ErrBindingRequestData, http.StatusBadRequest)
 	}
 	user, err := ctrl.Core.Create(c.Request().Context(), userCreateModel)
@@ -34,18 +34,24 @@ func (ctrl UsersController) CreateUser(c echo.Context) error {
 }
 
 func (controller UsersController) UpdateUser(c echo.Context) error {
-	userIdParam := c.Param("userId")
+	userId, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return v1.NewRequestError(ErrInvalidId, http.StatusBadRequest)
+	}
 	var userPatchModel user.UserPatchModel
-	if err := c.Bind(userPatchModel); err != nil {
+	if err := c.Bind(&userPatchModel); err != nil {
 		return v1.NewRequestError(ErrBindingRequestData, http.StatusBadRequest)
 	}
-	if err := controller.Core.Update(c.Request().Context(), userPatchModel); err != nil {
-		if err == store.ErrUserNotFound {
+	if err := controller.Core.Update(c.Request().Context(), userId, userPatchModel); err != nil {
+		if err == user.ErrUserNotValid {
+			return v1.NewRequestError(user.ErrUserNotValid, http.StatusBadRequest)
+		}
+		if errors.Is(err, store.ErrUserNotFound) {
 			return v1.NewRequestError(store.ErrUserNotFound, http.StatusNotFound)
 		}
 		return fmt.Errorf("failed to update user: %w", err)
 	}
-	userLocation := fmt.Sprintf("/users/%s", userIdParam)
+	userLocation := fmt.Sprintf("/users/%s", userId)
 	responseHeader := c.Response().Header()
 	responseHeader.Set("Location", userLocation)
 	responseHeader.Set("Content-Location", userLocation)
@@ -59,7 +65,7 @@ func (controller UsersController) GetUserById(c echo.Context) error {
 	}
 	userData, err := controller.Core.GetById(c.Request().Context(), userId)
 	if err != nil {
-		if err == store.ErrUserNotFound {
+		if errors.Is(err, store.ErrUserNotFound) {
 			return v1.NewRequestError(store.ErrUserNotFound, http.StatusNotFound)
 		}
 		return fmt.Errorf("failed to fetch user: %w", err)
@@ -69,13 +75,13 @@ func (controller UsersController) GetUserById(c echo.Context) error {
 }
 
 func (controller UsersController) DeleteUser(c echo.Context) error {
-	userId, err := uuid.Parse(c.Param("userId"))
+	userId, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		return v1.NewRequestError(ErrInvalidId, http.StatusBadRequest)
 	}
 	err = controller.Core.DeleteById(c.Request().Context(), userId)
 	if err != nil {
-		if err == store.ErrUserNotFound {
+		if errors.Is(err, store.ErrUserNotFound) {
 			return v1.NewRequestError(store.ErrUserNotFound, http.StatusNotFound)
 		}
 		return fmt.Errorf("failed to delete user: %w", err)

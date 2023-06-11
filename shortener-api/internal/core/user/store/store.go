@@ -8,6 +8,7 @@ import (
 	"net/mail"
 	"time"
 
+	"github.com/dawidhermann/shortener-api/internal/database"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -30,9 +31,9 @@ type Store struct {
 }
 
 type CreateUserResult struct {
-	UserId      uuid.UUID
-	DateCreated time.Time
-	DateUpdated time.Time
+	UserId    uuid.UUID
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func NewUserStore(db *sqlx.DB) *Store {
@@ -44,18 +45,17 @@ func NewUserStore(db *sqlx.DB) *Store {
 func (store Store) Create(ctx context.Context, user DbUser) (CreateUserResult, error) {
 	const query = `
 		INSERT INTO users (username, password, email)
-		VALUES (:username, :password, :email)
-		RETURNING user_id, date_created, date_updated
+		VALUES ($1, $2, $3)
+		RETURNING user_id, created_at
 	`
 	var createUserResult CreateUserResult
-	err := store.db.QueryRowxContext(ctx, query, user).Scan(&createUserResult)
-	if err != nil {
+	if err := database.NamedQueryStruct(ctx, store.db, query, user, createUserResult); err != nil {
 		if pgerr, ok := err.(*pq.Error); ok {
 			switch pgerr.Code {
 			case undefinedTable:
-				return createUserResult, ErrUndefinedTable
+				return CreateUserResult{}, ErrUndefinedTable
 			case uniqueViolation:
-				return createUserResult, ErrUniqueValidation
+				return CreateUserResult{}, ErrUniqueValidation
 			}
 		}
 		return createUserResult, err
@@ -71,18 +71,14 @@ func (store Store) Update(ctx context.Context, user DbUser) error {
 		WHERE
 			user_id = :user_id
 	`
-	if res, err := store.db.ExecContext(ctx, query, user); err != nil {
+	if err := database.NamedExecContext(ctx, store.db, query, user); err != nil {
 		if pgerr, ok := err.(*pq.Error); ok {
 			if pgerr.Code == uniqueViolation {
 				return ErrUniqueEmailViolation
 			}
 			return err
 		}
-		rows, rowsErr := res.RowsAffected()
-		if rowsErr != nil {
-			return fmt.Errorf("failed to get update result number: %w", rowsErr)
-		}
-		if rows < 1 {
+		if err == database.ErrDoNoRowsAffected {
 			return ErrUserNotFound
 		}
 		return err
@@ -103,17 +99,13 @@ func (store Store) GetById(ctx context.Context, id uuid.UUID) (DbUser, error) {
 			"email",
 			"password",
 			"enabled",
-			"date_created",
-			"date_updated"
+			"created_at"
 		FROM users
 		WHERE user_id = :user_id
 	`
 	var usr DbUser
-	if err := store.db.QueryRowxContext(ctx, query, queryData).Scan(&usr); err != nil {
-		if err == sql.ErrNoRows {
-			return DbUser{}, ErrUserNotFound
-		}
-		return DbUser{}, fmt.Errorf("failed to fetch user: %w", err)
+	if err := database.NamedQueryStruct(ctx, store.db, query, queryData, &usr); err != nil {
+		return DbUser{}, err
 	}
 	return usr, nil
 }
@@ -156,16 +148,11 @@ func (store Store) Delete(ctx context.Context, id uuid.UUID) error {
 		DELETE FROM users
 		WHERE "user_id" = :user_id
 	`
-	res, err := store.db.ExecContext(ctx, query, queryData)
-	if err != nil {
-		return fmt.Errorf("delete user: %w", err)
-	}
-	number, err := res.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("delete user: %w", err)
-	}
-	if number == 0 {
-		return ErrUserNotFound
+	if err := database.NamedExecContext(ctx, store.db, query, queryData); err != nil {
+		if err == database.ErrDoNoRowsAffected {
+			return ErrUserNotFound
+		}
+		return err
 	}
 	return nil
 }

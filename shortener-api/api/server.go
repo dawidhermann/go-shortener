@@ -49,7 +49,7 @@ func APIMux(db *sqlx.DB) *App {
 		Core: user.NewUserCore(db),
 	}
 	group := app.Group("/user")
-	group.POST("/", usrctrl.CreateUser)
+	group.POST("/asd/", usrctrl.CreateUser)
 	group.GET("/:id", usrctrl.GetUserById)
 	group.PATCH("/:id", usrctrl.UpdateUser)
 	group.DELETE("/:id", usrctrl.DeleteUser)

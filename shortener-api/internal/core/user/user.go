@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/mail"
 
@@ -10,6 +11,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/crypto/bcrypt"
+)
+
+var (
+	ErrUserNotValid = errors.New("user is not valid")
 )
 
 type Core struct {
@@ -33,28 +38,31 @@ func (core *Core) Create(ctx context.Context, userCreateModel UserCreateViewMode
 	if err != nil {
 		return User{}, fmt.Errorf("failed to hash password: %w", err)
 	}
+	email, err := mail.ParseAddress(userCreateModel.Email)
+	if err != nil {
+		return User{}, fmt.Errorf("failed to parse email: %w", err)
+	}
 	userData := User{
 		Username: userCreateModel.Username,
 		Password: hash,
-		Email:    userCreateModel.Email,
+		Email:    *email,
 	}
 	result, err := core.store.Create(ctx, toDbUser(userData))
 	if err != nil {
 		return User{}, fmt.Errorf("store error: %w", err)
 	}
 	userData.UserId = result.UserId
-	userData.DateCreated = result.DateCreated
-	userData.DateUpdated = result.DateUpdated
+	userData.DateCreated = result.CreatedAt
 	return userData, nil
 }
 
 // Validate user's data and updates existing user
-func (core *Core) Update(ctx context.Context, userData UserPatchModel) error {
+func (core *Core) Update(ctx context.Context, id uuid.UUID, userData UserPatchModel) error {
 	err := validate.ValidateStruct(userData)
-	user := User{}
 	if err != nil {
-		return fmt.Errorf("user data validation error: %w", err)
+		return ErrUserNotValid
 	}
+	user := User{UserId: id}
 	if userData.Email != nil {
 		addr, err := mail.ParseAddress(*userData.Email)
 		if err != nil {
