@@ -20,7 +20,8 @@ type GrpcConfig struct {
 }
 
 type AuthConfig struct {
-	JwtSecretKey   string
+	PrivateKeyPath string
+	PublicKeyPath  string
 	JwtAuthTimeSec int
 }
 
@@ -28,6 +29,7 @@ type AppConfig struct {
 	ApiPort          int
 	DatabaseConfig   DbConfig
 	GrpcServerConfig GrpcConfig
+	AuthConfig       AuthConfig
 }
 
 func init() {
@@ -49,10 +51,16 @@ func GetAppConfiguration() AppConfig {
 		GrpcServerPort: viper.GetInt("GRPC_SERVER_PORT"),
 		GrpcServerHost: viper.GetString("GRPC_SERVER_HOST"),
 	}
+	authConfig := AuthConfig{
+		PrivateKeyPath: viper.GetString("AUTH_PATH_PRIVATE_KEY"),
+		PublicKeyPath:  viper.GetString("AUTH_PATH_PUBLIC_KEY"),
+		JwtAuthTimeSec: viper.GetInt(("AUTH_TIME_SEC")),
+	}
 	return AppConfig{
 		ApiPort:          viper.GetInt("API_PORT"),
 		DatabaseConfig:   dbConfig,
 		GrpcServerConfig: grpcConfig,
+		AuthConfig:       authConfig,
 	}
 }
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	v1 "github.com/dawidhermann/shortener-api/business/web/v1"
+	v1 "github.com/dawidhermann/shortener-api/api/v1"
 	"github.com/dawidhermann/shortener-api/internal/core/user"
 	"github.com/dawidhermann/shortener-api/internal/core/user/store"
 	"github.com/google/uuid"
@@ -28,6 +28,9 @@ func (ctrl UsersController) CreateUser(c echo.Context) error {
 	}
 	user, err := ctrl.Core.Create(c.Request().Context(), userCreateModel)
 	if err != nil {
+		if errors.Is(err, store.ErrUniqueViolation) {
+			return v1.NewRequestError(store.ErrUniqueViolation, http.StatusConflict)
+		}
 		return fmt.Errorf("failed to create user [%v], %w", &user, err)
 	}
 	return c.JSON(http.StatusCreated, user)

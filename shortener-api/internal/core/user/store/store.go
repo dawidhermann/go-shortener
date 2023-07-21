@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/mail"
@@ -21,7 +20,7 @@ const (
 
 var (
 	ErrUndefinedTable       = errors.New("undefined table")
-	ErrUniqueValidation     = errors.New("unique validation")
+	ErrUniqueViolation      = errors.New("unique violation")
 	ErrUniqueEmailViolation = errors.New("unique email violation")
 	ErrUserNotFound         = errors.New("user not found")
 )
@@ -31,9 +30,9 @@ type Store struct {
 }
 
 type CreateUserResult struct {
-	UserId    uuid.UUID
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	UserId    uuid.UUID `db:"user_id"`
+	CreatedAt time.Time `db:"created_at"`
+	// UpdatedAt time.Time
 }
 
 func NewUserStore(db *sqlx.DB) *Store {
@@ -45,17 +44,18 @@ func NewUserStore(db *sqlx.DB) *Store {
 func (store Store) Create(ctx context.Context, user DbUser) (CreateUserResult, error) {
 	const query = `
 		INSERT INTO users (username, password, email)
-		VALUES ($1, $2, $3)
+		VALUES (:username, :password, :email)
 		RETURNING user_id, created_at
 	`
 	var createUserResult CreateUserResult
-	if err := database.NamedQueryStruct(ctx, store.db, query, user, createUserResult); err != nil {
-		if pgerr, ok := err.(*pq.Error); ok {
-			switch pgerr.Code {
+	if err := database.NamedQueryStruct(ctx, store.db, query, user, &createUserResult); err != nil {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) {
+			switch pqErr.Code {
 			case undefinedTable:
 				return CreateUserResult{}, ErrUndefinedTable
 			case uniqueViolation:
-				return CreateUserResult{}, ErrUniqueValidation
+				return CreateUserResult{}, ErrUniqueViolation
 			}
 		}
 		return createUserResult, err
@@ -105,16 +105,18 @@ func (store Store) GetById(ctx context.Context, id uuid.UUID) (DbUser, error) {
 	`
 	var usr DbUser
 	if err := database.NamedQueryStruct(ctx, store.db, query, queryData, &usr); err != nil {
-		return DbUser{}, err
+		if errors.Is(err, database.ErrDbNotFound) {
+			return DbUser{}, ErrUserNotFound
+		}
 	}
 	return usr, nil
 }
 
 func (store Store) GetByEmail(ctx context.Context, email mail.Address) (DbUser, error) {
 	queryData := struct {
-		Email mail.Address `db:"email"`
+		Email string `db:"email"`
 	}{
-		Email: email,
+		Email: email.Address,
 	}
 	const query = `
 		SELECT
@@ -123,16 +125,13 @@ func (store Store) GetByEmail(ctx context.Context, email mail.Address) (DbUser, 
 			"email",
 			"password",
 			"enabled",
-			"date_created",
-			"date_updated"
+			"created_at"
 		FROM users
 		WHERE email = :email
 	`
 	var usr DbUser
-	if err := store.db.QueryRowxContext(ctx, query, queryData).Scan(&usr); err != nil {
-		if err == sql.ErrNoRows {
-			return DbUser{}, ErrUserNotFound
-		}
+	if err := database.NamedQueryStruct(ctx, store.db, query, queryData, &usr); err != nil {
+		fmt.Println(err)
 		return DbUser{}, fmt.Errorf("failed to fetch user: %w", err)
 	}
 	return usr, nil

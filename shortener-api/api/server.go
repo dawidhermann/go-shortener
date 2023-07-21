@@ -1,10 +1,13 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
+	"github.com/dawidhermann/shortener-api/api/controllers/v1/authctrl"
 	"github.com/dawidhermann/shortener-api/api/controllers/v1/userctrl"
-	v1 "github.com/dawidhermann/shortener-api/business/web/v1"
+	v1 "github.com/dawidhermann/shortener-api/api/v1"
+	"github.com/dawidhermann/shortener-api/internal/auth"
 	"github.com/dawidhermann/shortener-api/internal/core/user"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
@@ -20,6 +23,11 @@ func NewApp() *App {
 	return &App{echo.New()}
 }
 
+type AppConfig struct {
+	Auth auth.Auth
+	Db   *sqlx.DB
+}
+
 // func (app App) Handle(method string, path string, handler Handler) {
 // 	h := func(c echo.Context) {
 
@@ -27,7 +35,7 @@ func NewApp() *App {
 // 	app.Router().Add(method, path, h)
 // }
 
-func APIMux(db *sqlx.DB) *App {
+func APIMux(cfg AppConfig) *App {
 	app := NewApp()
 	//r.Post("/auth", authController.authHandler)
 	// group := app.Group("/url")
@@ -46,13 +54,18 @@ func APIMux(db *sqlx.DB) *App {
 	// 	})
 	// })
 	usrctrl := userctrl.UsersController{
-		Core: user.NewUserCore(db),
+		Core: user.NewUserCore(cfg.Db),
+	}
+	authctrl := authctrl.AuthController{
+		Core: user.NewUserCore(cfg.Db),
+		Auth: cfg.Auth,
 	}
 	group := app.Group("/user")
 	group.POST("/asd/", usrctrl.CreateUser)
 	group.GET("/:id", usrctrl.GetUserById)
 	group.PATCH("/:id", usrctrl.UpdateUser)
 	group.DELETE("/:id", usrctrl.DeleteUser)
+	app.POST("/auth", authctrl.LoginUser)
 	app.HTTPErrorHandler = errorHandler
 	//r.Route("/user", func(r chi.Router) {
 	//	r.Group(func(r chi.Router) {

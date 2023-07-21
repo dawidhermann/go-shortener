@@ -1,23 +1,45 @@
 package auth
 
 import (
-	"database/sql"
+	"net/mail"
+
+	"github.com/golang-jwt/jwt/v5"
+	// echojwt "github.com/labstack/echo-jwt/v4"
+	// "github.com/labstack/echo/v4"
+	// "github.com/labstack/echo/v4/middleware"
+	// "net/http"
+
 	"errors"
-	"github.com/dawidhermann/shortener-api/config"
-	"github.com/go-chi/jwtauth"
-	"github.com/lestrrat-go/jwx/jwt"
 	"time"
 )
 
-type AuthManager struct {
-	dbConn *sql.DB
+type KeyLookup interface {
+	PrivateKeyPem() string
+	PublicKeyPem() string
 }
 
-type DbConfig struct {
-	DbUser     string
-	DbPassword string
-	DbAddr     string
-	DbName     string
+type Auth struct {
+	keyLookup      KeyLookup
+	jwtAuthTimeSec int
+}
+
+type TokenClaims struct {
+	UserId string
+	Email  *mail.Address
+}
+
+type jwtCustomClaims struct {
+	UserId string `json:"userId"`
+	Email  string `json:"email"`
+	jwt.RegisteredClaims
+}
+
+func New(keyLookup KeyLookup, authTime int) Auth {
+	auth := Auth{
+		keyLookup:      keyLookup,
+		jwtAuthTimeSec: authTime,
+	}
+	return auth
 }
 
 //func NewAuthManager(db *sql.DB) *AuthManager {
@@ -34,19 +56,28 @@ type DbConfig struct {
 
 var ErrEmptySecret = errors.New("cannot find jwt secret key in env variables")
 
-func NewAuthenticationManager(authConfig config.AuthConfig) (AuthenticationManager, error) {
-	if len(authConfig.JwtSecretKey) == 0 {
-		return AuthenticationManager{}, ErrEmptySecret
+func (auth Auth) NewToken(tokenClaims TokenClaims) (string, error) {
+	claims := &jwtCustomClaims{
+		tokenClaims.UserId,
+		tokenClaims.Email.String(),
+		jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Second * time.Duration(auth.jwtAuthTimeSec))),
+		},
 	}
-	tokenAuth := jwtauth.New("HS256", []byte(authConfig.JwtSecretKey), nil)
-	return AuthenticationManager{TokenAuth: tokenAuth, tokenExpTime: time.Duration(authConfig.JwtExpTime) * time.Second}, nil
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	privateKey := auth.keyLookup.PrivateKeyPem()
+	t, err := token.SignedString([]byte(privateKey))
+	if err != nil {
+		return "", err
+	}
+	return t, nil
 }
 
-func (authManager AuthenticationManager) EncodeJwtToken(claims map[string]interface{}) (jwt.Token, string, error) {
-	claimsMap := make(map[string]interface{})
-	for key, value := range claims {
-		claimsMap[key] = value
-	}
-	claimsMap["exp"] = time.Now().Add(authManager.tokenExpTime)
-	return authManager.TokenAuth.Encode(claimsMap)
-}
+// func EncodeJwtToken(claims map[string]interface{}) (jwt.Token, string, error) {
+// 	claimsMap := make(map[string]interface{})
+// 	for key, value := range claims {
+// 		claimsMap[key] = value
+// 	}
+// 	claimsMap["exp"] = time.Now().Add(authManager.tokenExpTime)
+// 	return authManager.TokenAuth.Encode(claimsMap)
+// }

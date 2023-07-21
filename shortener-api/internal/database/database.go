@@ -38,15 +38,15 @@ func Connect(cfg config.DbConfig) (*sqlx.DB, error) {
 
 func NamedQueryStruct(ctx context.Context, db sqlx.ExtContext, query string, queryData any, queryDest any) error {
 	rows, err := sqlx.NamedQueryContext(ctx, db, query, queryData)
-	defer rows.Close()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to execute query, error: %w", err)
 	}
+	defer rows.Close()
 	if !rows.Next() {
 		return ErrDbNotFound
 	}
 	if err = rows.StructScan(queryDest); err != nil {
-		return err
+		return fmt.Errorf("failed to scan data, error: %w", err)
 	}
 	return nil
 }
