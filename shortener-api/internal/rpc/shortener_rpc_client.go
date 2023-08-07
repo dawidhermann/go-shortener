@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/dawidhermann/shortener-api/config"
+	"github.com/dawidhermann/shortener-api/appbase/config"
 	pb "github.com/dawidhermann/shortener-api/internal/protobuf"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -15,8 +15,8 @@ type ConnRpc struct {
 	conn *grpc.ClientConn
 }
 
-func Connect(rpcConfig config.RpcConfig) ConnRpc {
-	grpcServerAddr := fmt.Sprintf("%s:%s", rpcConfig.ServerHost, rpcConfig.ServerPort)
+func Connect(rpcConfig config.GrpcConfig) ConnRpc {
+	grpcServerAddr := fmt.Sprintf("%s:%d", rpcConfig.GrpcServerHost, rpcConfig.GrpcServerPort)
 	connPtr, err := grpc.Dial(grpcServerAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("fail to dial: %v", err)

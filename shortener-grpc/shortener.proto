@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "github.com/dawidhermann/shortener-api/shortener-rpc";
+option go_package = "github.com/dawidhermann/shortener-api-old/shortener-rpc";
 
 package shortener;
 

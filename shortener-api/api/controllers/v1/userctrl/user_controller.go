@@ -8,6 +8,8 @@ import (
 	v1 "github.com/dawidhermann/shortener-api/api/v1"
 	"github.com/dawidhermann/shortener-api/internal/core/user"
 	"github.com/dawidhermann/shortener-api/internal/core/user/store"
+
+	// "github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
@@ -24,6 +26,7 @@ type UsersController struct {
 func (ctrl UsersController) CreateUser(c echo.Context) error {
 	var userCreateModel user.UserCreateViewModel
 	if err := c.Bind(&userCreateModel); err != nil {
+		fmt.Println(err)
 		return v1.NewRequestError(ErrBindingRequestData, http.StatusBadRequest)
 	}
 	user, err := ctrl.Core.Create(c.Request().Context(), userCreateModel)

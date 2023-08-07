@@ -2,19 +2,22 @@ package db
 
 import (
 	"context"
-	"github.com/go-redis/redis/v9"
+	"fmt"
 	"log"
 	"os"
+
+	"github.com/go-redis/redis/v9"
 )
 
 var rdb *redis.Client
 
 func init() {
 	options, err := redis.ParseURL(os.Getenv("REDIS_ADDR"))
-	options.Password = os.Getenv("REDIS_PASS")
 	if err != nil {
+		fmt.Println(os.Getenv("REDIS_ADDR"))
 		log.Fatal(err.Error())
 	}
+	options.Password = os.Getenv("REDIS_PASS")
 	rdb = redis.NewClient(options)
 }
 

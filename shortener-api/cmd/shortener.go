@@ -9,6 +9,7 @@ import (
 	"github.com/dawidhermann/shortener-api/appbase/config"
 	"github.com/dawidhermann/shortener-api/internal/auth"
 	"github.com/dawidhermann/shortener-api/internal/database"
+	"github.com/dawidhermann/shortener-api/internal/rpc"
 )
 
 func main() {
@@ -17,14 +18,12 @@ func main() {
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-	keyManager, err := auth.NewKeyReader(appConfig.AuthConfig.PrivateKeyPath, appConfig.AuthConfig.PublicKeyPath)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	auth := auth.New(keyManager, appConfig.AuthConfig.JwtAuthTimeSec)
+	auth := auth.New(appConfig.AuthConfig.SecretKey, appConfig.AuthConfig.JwtAuthTimeSec)
+	rpcConn := rpc.Connect(appConfig.GrpcServerConfig)
 	apiMux := api.APIMux(api.AppConfig{
-		Auth: auth,
-		Db:   db,
+		Auth:    auth,
+		Db:      db,
+		RpcConn: rpcConn,
 	})
 	api := http.Server{
 		Addr:    fmt.Sprintf(":%d", appConfig.ApiPort),

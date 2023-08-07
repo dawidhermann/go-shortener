@@ -108,6 +108,7 @@ func (store Store) GetById(ctx context.Context, id uuid.UUID) (DbUser, error) {
 		if errors.Is(err, database.ErrDbNotFound) {
 			return DbUser{}, ErrUserNotFound
 		}
+		return DbUser{}, err
 	}
 	return usr, nil
 }
@@ -143,9 +144,9 @@ func (store Store) Delete(ctx context.Context, id uuid.UUID) error {
 	}{
 		UserId: id,
 	}
-	query := `
+	const query = `
 		DELETE FROM users
-		WHERE "user_id" = :user_id
+		WHERE user_id = :user_id
 	`
 	if err := database.NamedExecContext(ctx, store.db, query, queryData); err != nil {
 		if err == database.ErrDoNoRowsAffected {

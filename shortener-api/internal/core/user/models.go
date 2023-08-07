@@ -3,8 +3,8 @@ package user
 import (
 	"net/mail"
 	"time"
-
 	"github.com/dawidhermann/shortener-api/internal/core/user/store"
+
 	"github.com/google/uuid"
 )
 

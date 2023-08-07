@@ -13,51 +13,39 @@ import (
 	"time"
 )
 
+var ErrEmptySecret = errors.New("cannot find jwt secret key in env variables")
+
 type KeyLookup interface {
 	PrivateKeyPem() string
 	PublicKeyPem() string
 }
 
 type Auth struct {
-	keyLookup      KeyLookup
+	Secret         string
 	jwtAuthTimeSec int
 }
 
-type TokenClaims struct {
+type UserClaims struct {
 	UserId string
 	Email  *mail.Address
 }
 
-type jwtCustomClaims struct {
+type JwtCustomClaims struct {
 	UserId string `json:"userId"`
 	Email  string `json:"email"`
 	jwt.RegisteredClaims
 }
 
-func New(keyLookup KeyLookup, authTime int) Auth {
+func New(secret string, authTime int) Auth {
 	auth := Auth{
-		keyLookup:      keyLookup,
+		Secret:         secret,
 		jwtAuthTimeSec: authTime,
 	}
 	return auth
 }
 
-//func NewAuthManager(db *sql.DB) *AuthManager {
-//	return &AuthManager{dbConn: db}
-//}
-//
-//func (authMng *AuthManager) GetUserByUsername(username string) error {
-//
-//}
-
-//func (authMng *AuthManager) Close() {
-//	authMng.Close()
-//}
-
-var ErrEmptySecret = errors.New("cannot find jwt secret key in env variables")
-
-func (auth Auth) NewToken(tokenClaims TokenClaims) (string, error) {
-	claims := &jwtCustomClaims{
+func (auth Auth) NewToken(tokenClaims UserClaims) (string, error) {
+	claims := &JwtCustomClaims{
 		tokenClaims.UserId,
 		tokenClaims.Email.String(),
 		jwt.RegisteredClaims{
@@ -65,19 +53,9 @@ func (auth Auth) NewToken(tokenClaims TokenClaims) (string, error) {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	privateKey := auth.keyLookup.PrivateKeyPem()
-	t, err := token.SignedString([]byte(privateKey))
+	t, err := token.SignedString([]byte(auth.Secret))
 	if err != nil {
 		return "", err
 	}
 	return t, nil
 }
-
-// func EncodeJwtToken(claims map[string]interface{}) (jwt.Token, string, error) {
-// 	claimsMap := make(map[string]interface{})
-// 	for key, value := range claims {
-// 		claimsMap[key] = value
-// 	}
-// 	claimsMap["exp"] = time.Now().Add(authManager.tokenExpTime)
-// 	return authManager.TokenAuth.Encode(claimsMap)
-// }

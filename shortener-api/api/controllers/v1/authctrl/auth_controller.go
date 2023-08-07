@@ -2,7 +2,6 @@ package authctrl
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"net/mail"
 
@@ -55,7 +54,7 @@ func (ctrl AuthController) LoginUser(c echo.Context) error {
 	if err != nil {
 		return v1.NewRequestError(ErrPasswordNotMatch, http.StatusBadRequest)
 	}
-	token, err := ctrl.Auth.NewToken(auth.TokenClaims{
+	token, err := ctrl.Auth.NewToken(auth.UserClaims{
 		UserId: user.UserId.String(),
 		Email:  &user.Email,
 	})
