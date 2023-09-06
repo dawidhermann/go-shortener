@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/dawidhermann/shortener-api/internal/auth/"
+	"github.com/dawidhermann/shortener-api/internal/auth"
 	"github.com/dawidhermann/shortener-api/internal/core/url/store"
 	"github.com/dawidhermann/shortener-api/internal/rpc"
 	"github.com/dawidhermann/shortener-api/internal/sys/validate"
@@ -42,9 +42,13 @@ func (core *Core) Create(ctx context.Context, urlCreateModel UrlCreateViewModel,
 	if err != nil {
 		return Url{}, fmt.Errorf("failed to shorten url: %w", err)
 	}
+	userId, err := uuid.Parse(userClaims.UserId)
+	if err != nil {
+		return Url{}, fmt.Errorf("failed to parse user id: %w", err)
+	}
 	url := Url{
 		Key:    urlKey,
-		UserId: userClaims.UserId,
+		UserId: userId,
 	}
 	createUrlRes, err := core.store.Create(ctx, toDbUrl(url))
 	if err != nil {
@@ -64,8 +68,12 @@ func (core *Core) GetById(ctx context.Context, id uuid.UUID) (Url, error) {
 }
 
 func (core *Core) Delete(ctx context.Context, id uuid.UUID) error {
-	err := core.store.Delete(ctx, id)
-	if err != nil {
-		fmt.Errorf("failed to delete url: %w", err)
+	rpcDeleteFn := func(key string) error {
+		return core.rpcConn.DeleteShortenedUrl(key)
 	}
+	err := core.store.Delete(ctx, id, rpcDeleteFn)
+	if err != nil {
+		return fmt.Errorf("failed to delete url: %w", err)
+	}
+	return nil
 }

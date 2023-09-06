@@ -11,8 +11,9 @@ import (
 )
 
 var (
-	ErrDbNotFound       = errors.New("db record not found")
-	ErrDoNoRowsAffected = errors.New("no rows affected")
+	ErrDbNotFound                = errors.New("db record not found")
+	ErrDoNoRowsAffected          = errors.New("no rows affected")
+	ErrTransactionCreationFailed = errors.New("failed to create new transaction")
 )
 
 func Connect(cfg config.DbConfig) (*sqlx.DB, error) {
@@ -51,6 +52,21 @@ func NamedQueryStruct(ctx context.Context, db sqlx.ExtContext, query string, que
 	return nil
 }
 
+func TxNamedQueryStruct(tx *sqlx.Tx, query string, queryData any, queryDest any) error {
+	rows, err := tx.NamedQuery(query, queryData)
+	if err != nil {
+		return fmt.Errorf("failed to execute query, error: %w", err)
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		return ErrDbNotFound
+	}
+	if err = rows.StructScan(queryDest); err != nil {
+		return fmt.Errorf("failed to scan data, error: %w", err)
+	}
+	return nil
+}
+
 func NamedExecContext(ctx context.Context, db sqlx.ExtContext, query string, queryData any) error {
 	result, err := sqlx.NamedExecContext(ctx, db, query, queryData)
 	if err != nil {
@@ -64,4 +80,26 @@ func NamedExecContext(ctx context.Context, db sqlx.ExtContext, query string, que
 		return ErrDoNoRowsAffected
 	}
 	return nil
+}
+
+func TxNamedExecContext(ctx context.Context, tx *sqlx.Tx, query string, queryData any) error {
+	result, err := tx.NamedExecContext(ctx, query, queryData)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrDoNoRowsAffected
+	}
+	return nil
+}
+
+func WithTx(db sqlx.ExtContext) (*sqlx.Tx, error) {
+	if txMng, ok := db.(*sqlx.DB); ok {
+		return txMng.MustBegin(), nil
+	}
+	return nil, ErrTransactionCreationFailed
 }
