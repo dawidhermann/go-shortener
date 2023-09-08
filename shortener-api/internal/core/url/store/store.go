@@ -42,7 +42,7 @@ func NewUrlStore(db *sqlx.DB) *Store {
 func (store Store) Create(ctx context.Context, url DbUrl) (CreateUrlResult, error) {
 	const query = `
 			INSERT INTO urls (url_key, user_id)
-			VALUES (:url_key, :url_key)
+			VALUES (:url_key, :user_id)
 			RETURNING url_id, created_at
 		`
 	var createUrlResult CreateUrlResult

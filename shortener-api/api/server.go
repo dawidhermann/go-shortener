@@ -4,9 +4,11 @@ import (
 	"net/http"
 
 	"github.com/dawidhermann/shortener-api/api/controllers/v1/authctrl"
+	"github.com/dawidhermann/shortener-api/api/controllers/v1/urlctrl"
 	"github.com/dawidhermann/shortener-api/api/controllers/v1/userctrl"
 	v1 "github.com/dawidhermann/shortener-api/api/v1"
 	"github.com/dawidhermann/shortener-api/internal/auth"
+	"github.com/dawidhermann/shortener-api/internal/core/url"
 	"github.com/dawidhermann/shortener-api/internal/core/user"
 	"github.com/dawidhermann/shortener-api/internal/rpc"
 	"github.com/golang-jwt/jwt/v5"
@@ -60,6 +62,9 @@ func APIMux(cfg AppConfig) *App {
 	usrctrl := userctrl.UsersController{
 		Core: user.NewUserCore(cfg.Db),
 	}
+	urlctrl := urlctrl.UrlsController{
+		Core: url.NewUrlCore(cfg.Db, cfg.RpcConn),
+	}
 	authctrl := authctrl.AuthController{
 		Core: user.NewUserCore(cfg.Db),
 		Auth: cfg.Auth,
@@ -69,11 +74,14 @@ func APIMux(cfg AppConfig) *App {
 			return []byte(cfg.Auth.Secret), nil
 		}}
 	authMiddleware := echojwt.WithConfig(config)
-	group := app.Group("/user")
-	group.POST("/", usrctrl.CreateUser)
-	group.GET("/:id", usrctrl.GetUserById, authMiddleware)
-	group.PATCH("/:id", usrctrl.UpdateUser, authMiddleware)
-	group.DELETE("/:id", usrctrl.DeleteUser, authMiddleware)
+	userGroup := app.Group("/user")
+	userGroup.POST("/", usrctrl.CreateUser)
+	userGroup.GET("/:id", usrctrl.GetUserById, authMiddleware)
+	userGroup.PATCH("/:id", usrctrl.UpdateUser, authMiddleware)
+	userGroup.DELETE("/:id", usrctrl.DeleteUser, authMiddleware)
+	urlGroup := app.Group("/url", authMiddleware)
+	urlGroup.POST("/", urlctrl.CreateUrl)
+	urlGroup.DELETE("/:id", urlctrl.DeleteUrl)
 	app.POST("/auth", authctrl.LoginUser)
 	app.HTTPErrorHandler = errorHandler
 	//r.Route("/user", func(r chi.Router) {

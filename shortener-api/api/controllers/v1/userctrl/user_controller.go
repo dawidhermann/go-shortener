@@ -26,7 +26,6 @@ type UsersController struct {
 func (ctrl UsersController) CreateUser(c echo.Context) error {
 	var userCreateModel user.UserCreateViewModel
 	if err := c.Bind(&userCreateModel); err != nil {
-		fmt.Println(err)
 		return v1.NewRequestError(ErrBindingRequestData, http.StatusBadRequest)
 	}
 	user, err := ctrl.Core.Create(c.Request().Context(), userCreateModel)
@@ -61,7 +60,7 @@ func (controller UsersController) UpdateUser(c echo.Context) error {
 	responseHeader := c.Response().Header()
 	responseHeader.Set("Location", userLocation)
 	responseHeader.Set("Content-Location", userLocation)
-	return c.NoContent(http.StatusOK)
+	return c.NoContent(http.StatusNoContent)
 }
 
 func (controller UsersController) GetUserById(c echo.Context) error {

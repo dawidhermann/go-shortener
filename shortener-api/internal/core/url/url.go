@@ -23,9 +23,10 @@ type Core struct {
 	rpcConn rpc.ConnRpc
 }
 
-func NewUrlCore(db *sqlx.DB) *Core {
+func NewUrlCore(db *sqlx.DB, rpcConn rpc.ConnRpc) *Core {
 	return &Core{
-		store: store.NewUrlStore(db),
+		store:   store.NewUrlStore(db),
+		rpcConn: rpcConn,
 	}
 }
 
