@@ -53,15 +53,17 @@ func APIMux(cfg AppConfig) *App {
 			return []byte(cfg.Auth.Secret), nil
 		}}
 	authMiddleware := echojwt.WithConfig(config)
-	userGroup := app.Group("/user")
+	appApi := app.Group("/api")
+	apiVersionGroup := appApi.Group("/v1")
+	userGroup := apiVersionGroup.Group("/user")
 	userGroup.POST("/", usrctrl.CreateUser)
 	userGroup.GET("/:id", usrctrl.GetUserById, authMiddleware)
 	userGroup.PATCH("/:id", usrctrl.UpdateUser, authMiddleware)
 	userGroup.DELETE("/:id", usrctrl.DeleteUser, authMiddleware)
-	urlGroup := app.Group("/url", authMiddleware)
+	urlGroup := apiVersionGroup.Group("/url", authMiddleware)
 	urlGroup.POST("/", urlctrl.CreateUrl)
 	urlGroup.DELETE("/:id", urlctrl.DeleteUrl)
-	app.POST("/auth", authctrl.LoginUser)
+	apiVersionGroup.POST("/auth", authctrl.LoginUser)
 	app.HTTPErrorHandler = errorHandler
 	return app
 }
