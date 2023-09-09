@@ -1,3 +1,4 @@
+// Defines endpoints for url management
 package urlctrl
 
 import (
@@ -21,6 +22,7 @@ var (
 	ErrInvalidId          = errors.New("invalid url id")
 )
 
+// Validate and create new url
 func (ctrl UrlsController) CreateUrl(c echo.Context) error {
 	var urlCreateModel url.UrlCreateViewModel
 	if err := c.Bind(&urlCreateModel); err != nil {
@@ -44,6 +46,7 @@ func (ctrl UrlsController) CreateUrl(c echo.Context) error {
 	return c.JSON(http.StatusCreated, urlModel)
 }
 
+// Delete url by ID
 func (ctrl UrlsController) DeleteUrl(c echo.Context) error {
 	urlId, err := uuid.Parse(c.Param("id"))
 	if err != nil {

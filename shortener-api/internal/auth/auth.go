@@ -1,24 +1,15 @@
+// Authentication manager for creating new tokens
 package auth
 
 import (
+	"errors"
 	"net/mail"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	// echojwt "github.com/labstack/echo-jwt/v4"
-	// "github.com/labstack/echo/v4"
-	// "github.com/labstack/echo/v4/middleware"
-	// "net/http"
-
-	"errors"
-	"time"
 )
 
 var ErrEmptySecret = errors.New("cannot find jwt secret key in env variables")
-
-type KeyLookup interface {
-	PrivateKeyPem() string
-	PublicKeyPem() string
-}
 
 type Auth struct {
 	Secret         string
@@ -36,6 +27,7 @@ type JwtCustomClaims struct {
 	jwt.RegisteredClaims
 }
 
+// Create new Authentication manager with specified JWT secret and authentication time
 func New(secret string, authTime int) Auth {
 	auth := Auth{
 		Secret:         secret,
@@ -44,6 +36,7 @@ func New(secret string, authTime int) Auth {
 	return auth
 }
 
+// Create new token with specified claims
 func (auth Auth) NewToken(tokenClaims UserClaims) (string, error) {
 	claims := &JwtCustomClaims{
 		tokenClaims.UserId,

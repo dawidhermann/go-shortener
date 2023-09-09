@@ -1,3 +1,4 @@
+// User management
 package user
 
 import (
@@ -21,7 +22,7 @@ type Core struct {
 	store *store.Store
 }
 
-// Create new user code
+// Create new user core
 func NewUserCore(db *sqlx.DB) *Core {
 	return &Core{
 		store: store.NewUserStore(db),

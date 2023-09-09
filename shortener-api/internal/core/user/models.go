@@ -3,6 +3,7 @@ package user
 import (
 	"net/mail"
 	"time"
+
 	"github.com/dawidhermann/shortener-api/internal/core/user/store"
 
 	"github.com/google/uuid"
@@ -37,6 +38,7 @@ type User struct {
 	DateUpdated time.Time
 }
 
+// Create new user view model
 func NewUserViewModel(user User) UserViewModel {
 	return UserViewModel{
 		UserId:   user.UserId,

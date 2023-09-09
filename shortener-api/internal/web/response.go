@@ -6,6 +6,7 @@ import (
 	"net/http"
 )
 
+//
 func Respond(ctx context.Context, w http.ResponseWriter, data any, statusCode int) error {
 	if statusCode == http.StatusNoContent {
 		w.WriteHeader(statusCode)

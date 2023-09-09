@@ -1,3 +1,4 @@
+// App validator
 package validate
 
 import "github.com/go-playground/validator/v10"
@@ -8,6 +9,7 @@ func init() {
 	validate = validator.New()
 }
 
+// Validate structure using tags
 func ValidateStruct(data any) error {
 	err := validate.Struct(data)
 	if err != nil {

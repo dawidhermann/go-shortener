@@ -1,3 +1,4 @@
+// users db store
 package store
 
 import (
@@ -35,12 +36,14 @@ type CreateUserResult struct {
 	// UpdatedAt time.Time
 }
 
+// Create new user store
 func NewUserStore(db *sqlx.DB) *Store {
 	return &Store{
 		db: db,
 	}
 }
 
+// Create new DB user
 func (store Store) Create(ctx context.Context, user DbUser) (CreateUserResult, error) {
 	const query = `
 		INSERT INTO users (username, password, email)
@@ -63,6 +66,7 @@ func (store Store) Create(ctx context.Context, user DbUser) (CreateUserResult, e
 	return createUserResult, nil
 }
 
+// Update DB user
 func (store Store) Update(ctx context.Context, user DbUser) error {
 	const query = `
 		UPDATE users SET
@@ -86,6 +90,7 @@ func (store Store) Update(ctx context.Context, user DbUser) error {
 	return nil
 }
 
+// Get user by ID from database
 func (store Store) GetById(ctx context.Context, id uuid.UUID) (DbUser, error) {
 	queryData := struct {
 		UserId uuid.UUID `db:"user_id"`
@@ -113,6 +118,7 @@ func (store Store) GetById(ctx context.Context, id uuid.UUID) (DbUser, error) {
 	return usr, nil
 }
 
+// Get user from DB by email
 func (store Store) GetByEmail(ctx context.Context, email mail.Address) (DbUser, error) {
 	queryData := struct {
 		Email string `db:"email"`
@@ -138,6 +144,7 @@ func (store Store) GetByEmail(ctx context.Context, email mail.Address) (DbUser, 
 	return usr, nil
 }
 
+// Delete user from DB by ID
 func (store Store) Delete(ctx context.Context, id uuid.UUID) error {
 	queryData := struct {
 		UserId uuid.UUID `db:"user_id"`

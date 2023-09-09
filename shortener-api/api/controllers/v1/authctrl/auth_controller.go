@@ -1,3 +1,4 @@
+// Definition of endpoints for authentcating users
 package authctrl
 
 import (
@@ -26,6 +27,7 @@ type AuthController struct {
 	Core *user.Core
 }
 
+// Returns JWT token if user exists and credential match
 func (ctrl AuthController) LoginUser(c echo.Context) error {
 	email, password, ok := c.Request().BasicAuth()
 	if !ok {

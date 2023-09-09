@@ -1,3 +1,4 @@
+// Defined endpoints for managing users
 package userctrl
 
 import (
@@ -9,7 +10,6 @@ import (
 	"github.com/dawidhermann/shortener-api/internal/core/user"
 	"github.com/dawidhermann/shortener-api/internal/core/user/store"
 
-	// "github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
@@ -23,6 +23,7 @@ type UsersController struct {
 	Core *user.Core
 }
 
+// Create and validate new user
 func (ctrl UsersController) CreateUser(c echo.Context) error {
 	var userCreateModel user.UserCreateViewModel
 	if err := c.Bind(&userCreateModel); err != nil {
@@ -38,6 +39,7 @@ func (ctrl UsersController) CreateUser(c echo.Context) error {
 	return c.JSON(http.StatusCreated, user)
 }
 
+// Update and validate existing user
 func (controller UsersController) UpdateUser(c echo.Context) error {
 	userId, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -63,6 +65,7 @@ func (controller UsersController) UpdateUser(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+// Get user by ID
 func (controller UsersController) GetUserById(c echo.Context) error {
 	userId, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -79,6 +82,7 @@ func (controller UsersController) GetUserById(c echo.Context) error {
 	return c.JSON(http.StatusOK, userViewModel)
 }
 
+// Delete user
 func (controller UsersController) DeleteUser(c echo.Context) error {
 	userId, err := uuid.Parse(c.Param("id"))
 	if err != nil {

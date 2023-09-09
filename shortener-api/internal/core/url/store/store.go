@@ -1,3 +1,4 @@
+// url db store
 package store
 
 import (
@@ -34,10 +35,12 @@ type CreateUrlResult struct {
 	CreatedAt time.Time `db:"created_at"`
 }
 
+// Create new url store
 func NewUrlStore(db *sqlx.DB) *Store {
 	return &Store{db: db}
 }
 
+// Create new db url
 func (store Store) Create(ctx context.Context, url DbUrl) (CreateUrlResult, error) {
 	const query = `
 			INSERT INTO urls (url_key, user_id)
@@ -68,6 +71,7 @@ func (store Store) Create(ctx context.Context, url DbUrl) (CreateUrlResult, erro
 	return createUrlResult, nil
 }
 
+// Get url by ID from db
 func (store Store) GetById(ctx context.Context, id uuid.UUID) (DbUrl, error) {
 	queryData := struct {
 		UrlId uuid.UUID `db:"url_id"`
@@ -93,6 +97,7 @@ func (store Store) GetById(ctx context.Context, id uuid.UUID) (DbUrl, error) {
 	return dbUrl, nil
 }
 
+// Delete url from DB
 func (store Store) Delete(ctx context.Context, id uuid.UUID, txFunc TxFunc) error {
 	queryData := struct {
 		UrlId uuid.UUID `db:"url_id"`

@@ -1,3 +1,4 @@
+// Main app mux
 package api
 
 import (
@@ -24,7 +25,7 @@ type App struct {
 	*echo.Echo
 }
 
-func NewApp(rpcConn rpc.ConnRpc) *App {
+func newApp(rpcConn rpc.ConnRpc) *App {
 	return &App{rpcConn, echo.New()}
 }
 
@@ -34,31 +35,9 @@ type AppConfig struct {
 	RpcConn rpc.ConnRpc
 }
 
-// func (app App) Handle(method string, path string, handler Handler) {
-// 	h := func(c echo.Context) {
-
-// 	}
-// 	app.Router().Add(method, path, h)
-// }
-
+// Create new app mux
 func APIMux(cfg AppConfig) *App {
-	app := NewApp(cfg.RpcConn)
-	//r.Post("/auth", authController.authHandler)
-	// group := app.Group("/url")
-	// group.POST("/", urlController.createShortenUrlHandler)
-	// app.Route("/url", func(r chi.Router) {
-	// 	//r.Use(jwtauth.Verifier(authManager.TokenAuth))
-	// 	app.Group(func(r chi.Router) {
-	// 		app.Post("/", urlController.createShortenUrlHandler)
-	// 	})
-	// 	app.Group(func(r chi.Router) {
-	// 		//r.Use(jwtauth.Authenticator)
-	// 		app.Route("/{urlId}", func(r chi.Router) {
-	// 			app.Delete("/", urlController.deleteShortenUrlHandler)
-	// 			app.Get("/", urlController.getUrlHandler)
-	// 		})
-	// 	})
-	// })
+	app := newApp(cfg.RpcConn)
 	usrctrl := userctrl.UsersController{
 		Core: user.NewUserCore(cfg.Db),
 	}
@@ -84,20 +63,6 @@ func APIMux(cfg AppConfig) *App {
 	urlGroup.DELETE("/:id", urlctrl.DeleteUrl)
 	app.POST("/auth", authctrl.LoginUser)
 	app.HTTPErrorHandler = errorHandler
-	//r.Route("/user", func(r chi.Router) {
-	//	r.Group(func(r chi.Router) {
-	//		r.Post("/", usersController.createUser)
-	//	})
-	//	r.Group(func(r chi.Router) {
-	//		r.Use(jwtauth.Verifier(authManager.TokenAuth))
-	//		r.Use(jwtauth.Authenticator)
-	//		r.Route("/{userId}", func(r chi.Router) {
-	//			r.Delete("/", usersController.deleteUser)
-	//			r.Get("/", usersController.getUser)
-	//			r.Patch("/", usersController.updateUser)
-	//		})
-	//	})
-	//})
 	return app
 }
 

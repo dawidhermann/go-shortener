@@ -1,3 +1,4 @@
+// Web app entry point
 package main
 
 import (

@@ -1,3 +1,4 @@
+// Application's config
 package config
 
 import (
@@ -38,6 +39,7 @@ func init() {
 	setDefaults()
 }
 
+// Create new application's config
 func GetAppConfiguration() AppConfig {
 	dbConfig := DbConfig{
 		Port:     viper.GetInt("DB_PORT"),

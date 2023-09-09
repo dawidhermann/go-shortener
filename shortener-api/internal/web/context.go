@@ -1,3 +1,4 @@
+// web request management
 package web
 
 import (
@@ -15,6 +16,7 @@ var (
 	ErrClaimTypeAssertion = errors.New("claim has different type")
 )
 
+// Get user claims from HTTP request context
 func GetUserClaims(c echo.Context) (auth.UserClaims, error) {
 	claims := getTokenClaims(c)
 	userIdClaim, err := getStringClaim(claims, "userId")

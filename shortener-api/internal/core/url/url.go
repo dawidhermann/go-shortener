@@ -1,3 +1,4 @@
+// Defines all url operations
 package url
 
 import (
@@ -24,6 +25,7 @@ type Core struct {
 	rpcConn rpc.ConnRpc
 }
 
+// Create new url Core object
 func NewUrlCore(db *sqlx.DB, rpcConn rpc.ConnRpc) *Core {
 	return &Core{
 		store:   store.NewUrlStore(db),
@@ -31,6 +33,7 @@ func NewUrlCore(db *sqlx.DB, rpcConn rpc.ConnRpc) *Core {
 	}
 }
 
+// Validate and create new url
 func (core *Core) Create(ctx context.Context, urlCreateModel UrlCreateViewModel, userClaims auth.UserClaims) (Url, error) {
 	err := validate.ValidateStruct(urlCreateModel)
 	if err != nil {
@@ -61,6 +64,7 @@ func (core *Core) Create(ctx context.Context, urlCreateModel UrlCreateViewModel,
 	return url, nil
 }
 
+// Get url by ID
 func (core *Core) GetById(ctx context.Context, id uuid.UUID) (Url, error) {
 	dbUrl, err := core.store.GetById(ctx, id)
 	if err != nil {
@@ -69,6 +73,7 @@ func (core *Core) GetById(ctx context.Context, id uuid.UUID) (Url, error) {
 	return toUrl(dbUrl), nil
 }
 
+// Delete url
 func (core *Core) Delete(ctx context.Context, id uuid.UUID) error {
 	rpcDeleteFn := func(key string) error {
 		return core.rpcConn.DeleteShortenedUrl(key)

@@ -1,3 +1,4 @@
+// Main database connection and operation handler
 package database
 
 import (
@@ -16,6 +17,7 @@ var (
 	ErrTransactionCreationFailed = errors.New("failed to create new transaction")
 )
 
+// Connect to database
 func Connect(cfg config.DbConfig) (*sqlx.DB, error) {
 	q := make(url.Values)
 	q.Set("sslmode", "disable")
@@ -26,7 +28,6 @@ func Connect(cfg config.DbConfig) (*sqlx.DB, error) {
 		Path:     cfg.DbName,
 		RawQuery: q.Encode(),
 	}
-	fmt.Println(connectionUrl.String())
 	dbPtr, err := sqlx.Open("postgres", connectionUrl.String())
 	if err != nil {
 		return nil, err
@@ -37,6 +38,7 @@ func Connect(cfg config.DbConfig) (*sqlx.DB, error) {
 	return dbPtr, nil
 }
 
+// Execute named query
 func NamedQueryStruct(ctx context.Context, db sqlx.ExtContext, query string, queryData any, queryDest any) error {
 	rows, err := sqlx.NamedQueryContext(ctx, db, query, queryData)
 	if err != nil {
@@ -52,6 +54,7 @@ func NamedQueryStruct(ctx context.Context, db sqlx.ExtContext, query string, que
 	return nil
 }
 
+// Execute named query in transaction
 func TxNamedQueryStruct(tx *sqlx.Tx, query string, queryData any, queryDest any) error {
 	rows, err := tx.NamedQuery(query, queryData)
 	if err != nil {
@@ -67,6 +70,7 @@ func TxNamedQueryStruct(tx *sqlx.Tx, query string, queryData any, queryDest any)
 	return nil
 }
 
+// Execute query in named exec context
 func NamedExecContext(ctx context.Context, db sqlx.ExtContext, query string, queryData any) error {
 	result, err := sqlx.NamedExecContext(ctx, db, query, queryData)
 	if err != nil {
@@ -82,6 +86,7 @@ func NamedExecContext(ctx context.Context, db sqlx.ExtContext, query string, que
 	return nil
 }
 
+// Execute query in transaction using named exec context
 func TxNamedExecContext(ctx context.Context, tx *sqlx.Tx, query string, queryData any) error {
 	result, err := tx.NamedExecContext(ctx, query, queryData)
 	if err != nil {
@@ -97,6 +102,7 @@ func TxNamedExecContext(ctx context.Context, tx *sqlx.Tx, query string, queryDat
 	return nil
 }
 
+// Create new transaction
 func WithTx(db sqlx.ExtContext) (*sqlx.Tx, error) {
 	if txMng, ok := db.(*sqlx.DB); ok {
 		return txMng.MustBegin(), nil

@@ -1,3 +1,4 @@
+// rpc client
 package rpc
 
 import (
@@ -15,6 +16,7 @@ type ConnRpc struct {
 	conn *grpc.ClientConn
 }
 
+// Connect to rpc service
 func Connect(rpcConfig config.GrpcConfig) ConnRpc {
 	grpcServerAddr := fmt.Sprintf("%s:%d", rpcConfig.GrpcServerHost, rpcConfig.GrpcServerPort)
 	connPtr, err := grpc.Dial(grpcServerAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -24,10 +26,12 @@ func Connect(rpcConfig config.GrpcConfig) ConnRpc {
 	return ConnRpc{conn: connPtr}
 }
 
+// close rpc connection
 func (rpcConn ConnRpc) Close() {
 	rpcConn.Close()
 }
 
+// create shortened url using rpc connection
 func (rpcConn ConnRpc) CreateShortenUrl(targetUrl string) (string, error) {
 	client := pb.NewShortenerClientClient(rpcConn.conn)
 	resp, err := client.CreateShortenedUrl(context.Background(), &pb.CreateShortenedUrlRequest{
@@ -39,6 +43,7 @@ func (rpcConn ConnRpc) CreateShortenUrl(targetUrl string) (string, error) {
 	return resp.Id, nil
 }
 
+// delete shortened url using rpc connection
 func (rpcConn ConnRpc) DeleteShortenedUrl(urlKey string) error {
 	client := pb.NewShortenerClientClient(rpcConn.conn)
 	_, err := client.DeleteShortenedUrl(context.Background(), &pb.DeleteShortenedUrlRequest{
