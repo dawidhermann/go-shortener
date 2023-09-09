@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/dawidhermann/shortener-api/appbase/config"
+	"github.com/dawidhermann/shortener-api/internal/config"
 	pb "github.com/dawidhermann/shortener-api/internal/protobuf"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

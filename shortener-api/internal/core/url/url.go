@@ -16,6 +16,7 @@ import (
 
 var (
 	ErrUserNotValid = errors.New("user is not valid")
+	ErrUrlNotFound  = errors.New("url not found")
 )
 
 type Core struct {
@@ -74,6 +75,9 @@ func (core *Core) Delete(ctx context.Context, id uuid.UUID) error {
 	}
 	err := core.store.Delete(ctx, id, rpcDeleteFn)
 	if err != nil {
+		if errors.Is(err, store.ErrUrlNotFound) {
+			return ErrUrlNotFound
+		}
 		return fmt.Errorf("failed to delete url: %w", err)
 	}
 	return nil

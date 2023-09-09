@@ -78,7 +78,7 @@ func (store Store) Update(ctx context.Context, user DbUser) error {
 			}
 			return err
 		}
-		if err == database.ErrDoNoRowsAffected {
+		if err == database.ErrDbNoRowsAffected {
 			return ErrUserNotFound
 		}
 		return err
@@ -149,7 +149,7 @@ func (store Store) Delete(ctx context.Context, id uuid.UUID) error {
 		WHERE user_id = :user_id
 	`
 	if err := database.NamedExecContext(ctx, store.db, query, queryData); err != nil {
-		if err == database.ErrDoNoRowsAffected {
+		if err == database.ErrDbNoRowsAffected {
 			return ErrUserNotFound
 		}
 		return err

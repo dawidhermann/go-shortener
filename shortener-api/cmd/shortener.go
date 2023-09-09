@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/dawidhermann/shortener-api/api"
-	"github.com/dawidhermann/shortener-api/appbase/config"
 	"github.com/dawidhermann/shortener-api/internal/auth"
+	"github.com/dawidhermann/shortener-api/internal/config"
 	"github.com/dawidhermann/shortener-api/internal/database"
 	"github.com/dawidhermann/shortener-api/internal/rpc"
 )

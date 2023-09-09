@@ -18,10 +18,9 @@ const (
 )
 
 var (
-	ErrUndefinedTable       = errors.New("undefined table")
-	ErrUniqueViolation      = errors.New("unique violation")
-	ErrUniqueEmailViolation = errors.New("unique email violation")
-	ErrUserNotFound         = errors.New("user not found")
+	ErrUndefinedTable  = errors.New("undefined table")
+	ErrUniqueViolation = errors.New("unique violation")
+	ErrUrlNotFound     = errors.New("url not found")
 )
 
 type TxFunc func(key string) error
@@ -87,7 +86,7 @@ func (store Store) GetById(ctx context.Context, id uuid.UUID) (DbUrl, error) {
 	var dbUrl DbUrl
 	if err := database.NamedQueryStruct(ctx, store.db, query, queryData, &dbUrl); err != nil {
 		if errors.Is(err, database.ErrDbNotFound) {
-			return DbUrl{}, ErrUserNotFound
+			return DbUrl{}, ErrUrlNotFound
 		}
 		return DbUrl{}, err
 	}
@@ -117,8 +116,8 @@ func (store Store) Delete(ctx context.Context, id uuid.UUID, txFunc TxFunc) erro
 		if txErr := tx.Rollback(); txErr != nil {
 			return fmt.Errorf("failed to rollback transaction: %w. root cause: %w", txErr, err)
 		}
-		if err == database.ErrDoNoRowsAffected {
-			return ErrUserNotFound
+		if errors.Is(err, database.ErrDbNotFound) {
+			return ErrUrlNotFound
 		}
 		return err
 	}

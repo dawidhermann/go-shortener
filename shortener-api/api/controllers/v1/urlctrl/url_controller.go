@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	v1 "github.com/dawidhermann/shortener-api/api/v1"
-	"github.com/dawidhermann/shortener-api/appbase/web"
 	"github.com/dawidhermann/shortener-api/internal/core/url"
+	"github.com/dawidhermann/shortener-api/internal/web"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
@@ -24,7 +24,6 @@ var (
 func (ctrl UrlsController) CreateUrl(c echo.Context) error {
 	var urlCreateModel url.UrlCreateViewModel
 	if err := c.Bind(&urlCreateModel); err != nil {
-		fmt.Println(err)
 		return v1.NewRequestError(ErrBindingRequestData, http.StatusBadRequest)
 	}
 	claims, err := web.GetUserClaims(c)
@@ -51,6 +50,9 @@ func (ctrl UrlsController) DeleteUrl(c echo.Context) error {
 		return v1.NewRequestError(ErrInvalidId, http.StatusBadRequest)
 	}
 	if err := ctrl.Core.Delete(c.Request().Context(), urlId); err != nil {
+		if errors.Is(err, url.ErrUrlNotFound) {
+			return v1.NewRequestError(err, http.StatusNotFound)
+		}
 		return v1.NewRequestError(err, http.StatusInternalServerError)
 	}
 	return c.NoContent(http.StatusNoContent)

@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/dawidhermann/shortener-api/appbase/config"
+	"github.com/dawidhermann/shortener-api/internal/config"
 	"github.com/jmoiron/sqlx"
 )
 
 var (
 	ErrDbNotFound                = errors.New("db record not found")
-	ErrDoNoRowsAffected          = errors.New("no rows affected")
+	ErrDbNoRowsAffected          = errors.New("no rows affected")
 	ErrTransactionCreationFailed = errors.New("failed to create new transaction")
 )
 
@@ -77,7 +77,7 @@ func NamedExecContext(ctx context.Context, db sqlx.ExtContext, query string, que
 		return err
 	}
 	if rowsAffected == 0 {
-		return ErrDoNoRowsAffected
+		return ErrDbNoRowsAffected
 	}
 	return nil
 }
@@ -92,7 +92,7 @@ func TxNamedExecContext(ctx context.Context, tx *sqlx.Tx, query string, queryDat
 		return err
 	}
 	if rowsAffected == 0 {
-		return ErrDoNoRowsAffected
+		return ErrDbNoRowsAffected
 	}
 	return nil
 }
