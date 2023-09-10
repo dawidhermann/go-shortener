@@ -1,3 +1,4 @@
+// Key value store
 package db
 
 import (
@@ -13,6 +14,7 @@ type KVStore struct {
 	Rdb *redis.Client
 }
 
+// Return new store
 func New(cfg config.StoreConfig) *KVStore {
 	options, err := redis.ParseURL(cfg.Address)
 	if err != nil {
@@ -23,6 +25,7 @@ func New(cfg config.StoreConfig) *KVStore {
 	return &KVStore{Rdb: redis.NewClient(options)}
 }
 
+// Get URL from KV or return error
 func (store KVStore) GetUrl(shortenedUrl string) (string, error) {
 	ctx := context.Background()
 	val, err := store.Rdb.Get(ctx, shortenedUrl).Result()

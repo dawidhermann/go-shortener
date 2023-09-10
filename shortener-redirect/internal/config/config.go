@@ -1,3 +1,4 @@
+// App configuration definition
 package config
 
 type StoreConfig struct {
