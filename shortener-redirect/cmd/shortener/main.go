@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/dawidhermann/shortener-redirect/api/redirectionctrl"
@@ -9,13 +10,12 @@ import (
 )
 
 func main() {
-	cfg := config.StoreConfig{
-		Address:  "redis://localhost:6379",
-		Password: "s3CreTP4sS",
-	}
-	store := db.New(cfg)
+	cfg := config.GetAppConfiguration()
+	fmt.Println(cfg)
+	store := db.New(cfg.Store)
 	redirectionctrl := redirectionctrl.New(store)
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", redirectionctrl.Redirect)
-	http.ListenAndServe(":8092", mux)
+	port := fmt.Sprintf(":%s", cfg.Api.Port)
+	http.ListenAndServe(port, mux)
 }
