@@ -1,3 +1,4 @@
+// Generates shortened urls
 package shortener
 
 import (
@@ -15,11 +16,8 @@ func shortenUrl() string {
 }
 
 func randomString() string {
-	rand.Seed(time.Now().UnixNano())
-	//b := make([]byte, length)
-	//rand.Read(b)
-	//return fmt.Sprintf("%x", b)[:length]
-	return base62Encode(rand.Uint64())
+	r := rand.New(rand.NewSource(time.Hour.Microseconds()))
+	return base62Encode(r.Uint64())
 }
 
 func base62Encode(number uint64) string {

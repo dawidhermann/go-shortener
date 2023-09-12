@@ -1,3 +1,4 @@
+// Storage
 package db
 
 import (
@@ -6,35 +7,35 @@ import (
 	"log"
 	"os"
 
+	"github.com/dawidhermann/shortener-url/internal/config"
 	"github.com/go-redis/redis/v9"
 )
 
-var rdb *redis.Client
+type KVStore struct {
+	Rdb *redis.Client
+}
 
-func init() {
-	options, err := redis.ParseURL(os.Getenv("REDIS_ADDR"))
+func New(cfg config.StoreConfig) *KVStore {
+	options, err := redis.ParseURL(cfg.Address)
 	if err != nil {
 		fmt.Println(os.Getenv("REDIS_ADDR"))
 		log.Fatal(err.Error())
 	}
-	options.Password = os.Getenv("REDIS_PASS")
-	rdb = redis.NewClient(options)
+	options.Password = cfg.Password
+	rdb := redis.NewClient(options)
+	return &KVStore{Rdb: rdb}
 }
 
-func SaveUrl(shortenedUrl string, targetUrl string) error {
+// Save url in key-value storage
+func (store KVStore) SaveUrl(shortenedUrl string, targetUrl string) error {
 	ctx := context.Background()
-	err := rdb.Set(ctx, shortenedUrl, targetUrl, 0).Err()
+	err := store.Rdb.Set(ctx, shortenedUrl, targetUrl, 0).Err()
 	return err
 }
 
-func DeleteUrl(url string) error {
+// Delete url from key-value storage
+func (store KVStore) DeleteUrl(url string) error {
 	ctx := context.Background()
-	err := rdb.Del(ctx, url).Err()
+	err := store.Rdb.Del(ctx, url).Err()
 	return err
-}
-
-func GetUrl(shortenedUrl string) (string, error) {
-	ctx := context.Background()
-	val, err := rdb.Get(ctx, shortenedUrl).Result()
-	return val, err
 }
